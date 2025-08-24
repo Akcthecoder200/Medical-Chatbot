@@ -28,7 +28,7 @@ docsearch = PineconeVectorStore.from_existing_index(
 
 retriever = docsearch.as_retriever(search_type="similarity", search_kwargs={"k": 3})
 
-chatModel = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.2,google_api_key="AIzaSyDW9l9jgavTk-Xu0sa2TEb3_2muHXBDdOs")
+chatModel = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.2,google_api_key=GEMINI_API_KEY)
 prompt = ChatPromptTemplate.from_messages([
     ("system", system_prompt),
     ("human", "{input}"),

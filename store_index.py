@@ -13,7 +13,10 @@ GEMINI_API_KEY=os.environ.get('GEMINI_API_KEY')
 
 os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
 os.environ["GEMINI_API_KEY"] = GEMINI_API_KEY
-
+ 
+ 
+print("PINECONE_API_KEY loaded:", PINECONE_API_KEY)
+print("GEMINI_API_KEY loaded:", GEMINI_API_KEY)
 
 extracted_data=load_pdf_file(data='data/')
 filter_data = filter_to_minimal_docs(extracted_data)
