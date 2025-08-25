@@ -3,6 +3,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from typing import List
 from langchain.schema import Document
+from langchain_community.retrievers import BM25Retriever
 
 
 #Extract Data From the PDF File
@@ -47,3 +48,9 @@ def text_split(extracted_data):
 def download_hugging_face_embeddings():
     embeddings=HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')  #this model return 384 dimensions
     return embeddings
+
+
+def get_bm25_retriever(text_chunks, k=3):
+    retriever = BM25Retriever.from_documents(text_chunks)
+    retriever.k = k
+    return retriever

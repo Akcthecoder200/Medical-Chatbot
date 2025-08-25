@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify, request
-from src.helper import download_hugging_face_embeddings, load_pdf_file, filter_to_minimal_docs, text_split
+from src.helper import download_hugging_face_embeddings, load_pdf_file, filter_to_minimal_docs, text_split, get_bm25_retriever
 from langchain_pinecone import PineconeVectorStore
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import create_retrieval_chain
@@ -51,14 +51,28 @@ def allowed_file(filename):
 def index():
     return render_template('chat.html')
 
+bm25_retriever = None
+
+def hybrid_retrieve(query):
+    # If bm25_retriever is not initialized, use only vector retriever
+    if bm25_retriever is None:
+        return retriever.get_relevant_documents(query)
+    bm25_docs = bm25_retriever.get_relevant_documents(query)
+    vector_docs = retriever.get_relevant_documents(query)
+    # Combine and deduplicate (by page_content)
+    all_docs = {doc.page_content: doc for doc in bm25_docs + vector_docs}
+    return list(all_docs.values())
+
 @app.route("/get", methods=["GET", "POST"])
 def chat():
     msg = request.form["msg"]
     input = msg
     print(input)
-    response = rag_chain.invoke({"input": msg})
-    print("Response : ", response["answer"])
-    return str(response["answer"])
+    # Use hybrid retrieval
+    docs = hybrid_retrieve(msg)
+    response = question_answer_chain.invoke({"input": msg, "context": docs})
+    print("Response : ", response)
+    return str(response)
 
 @app.route("/upload", methods=["POST"])
 def upload_pdf():
@@ -78,6 +92,8 @@ def upload_pdf():
             minimal_docs = filter_to_minimal_docs(docs)
             chunks = text_split(minimal_docs)
             docsearch.add_documents(documents=chunks)
+            global bm25_retriever
+            bm25_retriever = get_bm25_retriever(chunks)
             return jsonify({"success": True, "filename": filename}), 200
         except PdfReadError:
             os.remove(save_path)
